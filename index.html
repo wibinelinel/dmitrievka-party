@@ -6,12 +6,17 @@
   <title>БАНЯ У АЛИ // 29.12</title>
   <style>
     :root {
-      --accent: #39ff14;
+      --accent: #2cec0a;
       --accent-dim: rgba(57, 255, 20, 0.16);
       --bg: #070907;
       --panel: rgba(14, 19, 14, 0.88);
       --text: #f2fff0;
       --muted: #8ca888;
+      --glow-x: 50%;
+      --glow-y: 42%;
+      --glow-scale: 1;
+      --glow-alpha: 0.8;
+      --flicker-alpha: 0.3;
     }
 
     body.mode-doomsday {
@@ -44,9 +49,7 @@
 
     body {
       min-height: 100vh;
-      background:
-        radial-gradient(circle at 50% 35%, var(--accent-dim), transparent 62%),
-        var(--bg);
+      background: var(--bg);
       color: var(--text);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       display: flex;
@@ -58,8 +61,41 @@
       transition: background 0.45s ease, color 0.35s ease;
     }
 
+    /* Фоновые слои мерцания, управляемые из JS */
+    .ambient-glow {
+      position: fixed;
+      inset: -15%;
+      pointer-events: none;
+      z-index: 0;
+      background: radial-gradient(
+        circle at var(--glow-x) var(--glow-y),
+        var(--accent-dim),
+        transparent 64%
+      );
+      opacity: var(--glow-alpha);
+      transform: scale(var(--glow-scale));
+      will-change: transform, opacity;
+    }
+
+    .scanline-flicker {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.03) 0px,
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 2px,
+        transparent 4px
+      );
+      opacity: var(--flicker-alpha);
+      will-change: opacity;
+    }
+
     /* Стартовый экран до нажатия кнопки звука */
     .entry-screen {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -110,6 +146,7 @@
 
     /* Основной интерфейс после запуска */
     .app-shell {
+      position: relative;
       display: none;
       width: 100%;
       max-width: 1120px;
@@ -117,6 +154,7 @@
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
+      z-index: 5;
     }
 
     body.entered .app-shell {
@@ -172,29 +210,20 @@
       transform: translateY(-1px);
     }
 
-    button.btn.primary {
-      background: var(--accent);
-      color: #050705;
-    }
-
+    /* Центровка по центру экрана на ПК и мобилках */
     .main-stage {
       width: 100%;
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 28px;
-      align-items: center;
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 24px;
       margin: 20px 0;
       z-index: 2;
     }
 
-    @media (max-width: 900px) {
-      .main-stage {
-        grid-template-columns: 1fr;
-        justify-items: center;
-      }
-    }
-
     .center-zone {
+      width: 100%;
+      max-width: 680px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -318,49 +347,16 @@
     }
 
     .sidebar {
-      width: 290px;
-      max-width: 95vw;
+      width: min(560px, 100%);
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 14px;
     }
 
-    .vacancy-card {
-      background: var(--panel);
-      border: 1px solid var(--accent);
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 0 24px var(--accent-dim);
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-
-    .vacancy-card:hover {
-      transform: translateY(-2px);
-    }
-
-    .vacancy-tag {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--accent);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .vacancy-title {
-      font-size: 16px;
-      font-weight: 900;
-      margin-bottom: 6px;
-    }
-
-    .vacancy-sub {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
     .squad-card {
+      width: 100%;
+      text-align: center;
       background: var(--panel);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 14px;
@@ -464,71 +460,12 @@
       text-shadow: 0 0 36px rgba(255, 30, 66, 0.55);
       user-select: none;
     }
-
-    .red-skip-btn {
-      position: fixed;
-      top: 18px;
-      right: 18px;
-      z-index: 35;
-      background: rgba(255, 30, 66, 0.12);
-      color: #ff6b81;
-      border: 1px solid rgba(255, 30, 66, 0.45);
-      border-radius: 8px;
-      padding: 7px 12px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      cursor: pointer;
-    }
-
-    /* Модалка вакансии */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.78);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 50;
-    }
-
-    .modal-backdrop.open {
-      display: flex;
-    }
-
-    .modal {
-      width: min(460px, 100%);
-      background: #0d120d;
-      border: 1px solid var(--accent);
-      border-radius: 16px;
-      padding: 22px;
-      box-shadow: 0 0 36px var(--accent-dim);
-    }
-
-    .modal h2 {
-      font-size: 19px;
-      margin-bottom: 10px;
-      color: var(--accent);
-    }
-
-    .modal p {
-      font-size: 13px;
-      color: var(--text);
-      line-height: 1.5;
-      margin-bottom: 10px;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-top: 16px;
-    }
   </style>
 </head>
 <body class="mode-rave">
+  <div class="ambient-glow" aria-hidden="true"></div>
+  <div class="scanline-flicker" aria-hidden="true"></div>
+
   <!-- Стартовый экран: сначала запуск звука, потом открывается интерфейс -->
   <section class="entry-screen" id="entryScreen">
     <div class="entry-sub">УФА AKA ДМИТРИЕВКА // 29.12.2026</div>
@@ -538,7 +475,6 @@
 
   <!-- 2-й этап: чисто красный таймер без интерфейса -->
   <div class="pure-red-screen" id="pureRedScreen">
-    <button class="red-skip-btn" id="redSkipBtn">SKIP ЭТАП ➔</button>
     <div class="pure-red-timer" id="pureRedTimer">-24:00:00</div>
   </div>
 
@@ -548,7 +484,6 @@
       <span class="badge" id="stageBadge">ЭТАП 1 // ACID RAVE</span>
       <div class="controls-top">
         <button class="btn" id="audioToggleBtn">❚❚ ПАУЗА</button>
-        <button class="btn" id="skipStageBtn">SKIP ЭТАП ➔</button>
       </div>
     </header>
 
@@ -615,14 +550,6 @@
       </section>
 
       <aside class="sidebar" id="sidebar">
-        <div class="vacancy-card" id="openVacancyBtn">
-          <div class="vacancy-tag">ГОРЯЧАЯ ПЛАШКА</div>
-          <div class="vacancy-title">🔥 ВАКАНСИЯ ДЕВОЧЕК НА ТУСУ</div>
-          <div class="vacancy-sub">
-            Открыт отклик через штаб-бота. Жми, чтобы глянуть условия и улететь в анкету.
-          </div>
-        </div>
-
         <div class="squad-card">
           <strong>СОСТАВ: 4 / 4</strong>
           <span>Закрытый элитный состав в Дмитриевке. Баня, джойстики и снег готовы.</span>
@@ -635,36 +562,14 @@
     </footer>
   </div>
 
-  <div class="modal-backdrop" id="vacancyModal">
-    <div class="modal">
-      <h2>🔥 ВАКАНСИЯ ДЕВОЧЕК НА ТУСУ // 29.12</h2>
-      <p><strong>Требования:</strong> стрессоустойчивость, умение держать удар после парилки и готовность нырять в сугроб.</p>
-      <p><strong>Условия:</strong> Стойкость, бесстрашие, умение играть в литрболл.</p>
-      <div class="modal-actions">
-        <button class="btn" id="closeVacancyBtn">ЗАКРЫТЬ</button>
-        <a
-          class="btn primary"
-          style="text-decoration: none; display: inline-flex; align-items: center;"
-          href="https://t.me/dmmvka_bot?start=vacancy"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          АНКЕТА В БОТЕ ➔
-        </a>
-      </div>
-    </div>
-  </div>
-
   <audio id="bgAudio" src="track.mp3" loop crossorigin="anonymous"></audio>
 
   <script>
     const TARGET_MS = Date.parse('2026-12-29T19:00:00+05:00');
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-    let stageOverride = null;
-    let fnafIntroPlayed = false;
-
     const bodyEl = document.body;
+    const rootStyle = document.documentElement.style;
     const enterWithSoundBtn = document.getElementById('enterWithSoundBtn');
     const stageBadge = document.getElementById('stageBadge');
     const mainTitle = document.getElementById('mainTitle');
@@ -684,7 +589,6 @@
     }
 
     function getCurrentStage(nowMs) {
-      if (stageOverride !== null) return stageOverride;
       const diff = TARGET_MS - nowMs;
       if (diff > ONE_DAY_MS) return 1;
       if (diff > 0) return 2;
@@ -736,9 +640,7 @@
         const mins = Math.floor((elapsed % 3600000) / 60000);
         const secs = Math.floor((elapsed % 60000) / 1000);
         countdownDisplay.textContent = `+${formatPad(hours)}:${formatPad(mins)}:${formatPad(secs)}`;
-        countdownCaption.textContent = fnafIntroPlayed
-          ? '6:00 AM // ВРЕМЯ В УГАРЕ'
-          : '5:59 → 6:00 AM // ВРЕМЯ В УГАРЕ';
+        countdownCaption.textContent = '6:00 AM // ВРЕМЯ В УГАРЕ';
       } else {
         bodyEl.classList.add('mode-aftermath');
         stageBadge.textContent = 'ЭТАП 4 // ФИНАЛЬНЫЕ ТИТРЫ';
@@ -750,37 +652,28 @@
       }
     }
 
-    function advanceStage() {
-      const current = getCurrentStage(Date.now());
-      stageOverride = current >= 4 ? 1 : current + 1;
-      if (stageOverride === 3 && !fnafIntroPlayed) {
-        fnafIntroPlayed = true;
-        applyStageUI(3, Date.now());
-        countdownDisplay.textContent = '5:59 AM';
-        countdownCaption.textContent = 'ПЕРЕХОД НА 6:00 AM...';
-        setTimeout(() => {
-          countdownDisplay.textContent = '6:00 AM';
-          applyStageUI(3, Date.now());
-        }, 900);
-      } else {
-        applyStageUI(stageOverride, Date.now());
-      }
+    // Мерцание фона через JS + реакция на саб-бас
+    function updateBackgroundFlicker(time, stage, bassBoostFactor, subBassLevel) {
+      const speed = stage === 2 ? 0.0085 : stage === 3 ? 0.0045 : 0.0026;
+      const wave = Math.sin(time * speed) * 0.5 + 0.5;
+      const microJitter = (Math.random() - 0.5) * (stage === 2 ? 0.16 : 0.08);
+
+      const bassKick = analyser && isPlaying ? subBassLevel * 0.35 * Math.min(bassBoostFactor, 1.8) : 0;
+      const glowAlpha = Math.max(0.25, Math.min(1, 0.52 + wave * 0.28 + bassKick + microJitter * 0.4));
+      const glowScale = (0.97 + wave * 0.05 + bassKick * 0.08).toFixed(3);
+
+      const driftX = (50 + Math.cos(time * 0.0007) * 5).toFixed(1);
+      const driftY = (42 + Math.sin(time * 0.0009) * 4).toFixed(1);
+
+      const baseFlicker = stage === 2 ? 0.42 : stage === 3 ? 0.34 : 0.24;
+      const flickerAlpha = Math.max(0.08, Math.min(0.65, baseFlicker + (Math.random() - 0.48) * 0.14));
+
+      rootStyle.setProperty('--glow-alpha', glowAlpha.toFixed(3));
+      rootStyle.setProperty('--glow-scale', glowScale);
+      rootStyle.setProperty('--glow-x', `${driftX}%`);
+      rootStyle.setProperty('--glow-y', `${driftY}%`);
+      rootStyle.setProperty('--flicker-alpha', flickerAlpha.toFixed(3));
     }
-
-    document.getElementById('skipStageBtn').addEventListener('click', advanceStage);
-    document.getElementById('redSkipBtn').addEventListener('click', advanceStage);
-
-    // Модалка вакансии
-    const vacancyModal = document.getElementById('vacancyModal');
-    document.getElementById('openVacancyBtn').addEventListener('click', () => {
-      vacancyModal.classList.add('open');
-    });
-    document.getElementById('closeVacancyBtn').addEventListener('click', () => {
-      vacancyModal.classList.remove('open');
-    });
-    vacancyModal.addEventListener('click', (e) => {
-      if (e.target === vacancyModal) vacancyModal.classList.remove('open');
-    });
 
     // Web Audio API + Bass Boost + Круг-эквалайзер
     const audioEl = document.getElementById('bgAudio');
@@ -884,6 +777,18 @@
       const stage = getCurrentStage(nowMs);
       applyStageUI(stage, nowMs);
 
+      const bassBoostFactor = 1 + parseFloat(bassSlider.value) / 28;
+      if (analyser && isPlaying) {
+        analyser.getByteFrequencyData(freqData);
+      }
+
+      const subBassLevel =
+        analyser && isPlaying && freqData
+          ? (freqData[1] + freqData[2] + freqData[3]) / (3 * 255)
+          : 0;
+
+      updateBackgroundFlicker(time, stage, bassBoostFactor, subBassLevel);
+
       if (!bodyEl.classList.contains('entered') || stage === 2) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -892,11 +797,6 @@
       const baseRadius = 118;
 
       const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
-      const bassBoostFactor = 1 + parseFloat(bassSlider.value) / 28;
-
-      if (analyser && isPlaying) {
-        analyser.getByteFrequencyData(freqData);
-      }
 
       const bars = 64;
       for (let i = 0; i < bars; i++) {
